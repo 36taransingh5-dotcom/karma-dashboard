@@ -87,7 +87,7 @@ export default function Index() {
     setAiLoading(true);
     setAiResponse(null);
     try {
-      const apiKey = "sk-hc-v1-24e713564a5c495e920e1df718d512deaf23c4b1afe44e57bea542428b5d5c35";
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
       // Attempt to extract values for the prompt
       const amountMatch = input.match(/£?(\d+(?:\.\d+)?)/);
@@ -201,7 +201,7 @@ RESPONSE FORMAT:
         .filter(tx => tx.spendingType === "noise")
         .reduce((sum, tx) => sum + tx.amount, 0);
 
-      const fallbackMessage = `OFFLINE MODE: Cloud units are occupied, but my local Auditor is active. I've detected £${noiseTotal.toFixed(2)} in absolute financial waste. Initiating incineration sequence.`;
+      const fallbackMessage = `Cloud sync failed, but my local Auditor is active. I've found £${noiseTotal.toFixed(2)} in waste. Incinerating now.`;
 
       // Ensure state updates to trigger the 'burning' animations in AIChatView
       setAiResponse(fallbackMessage);

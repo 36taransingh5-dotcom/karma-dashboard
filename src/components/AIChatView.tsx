@@ -137,6 +137,10 @@ export default function AIChatView({
                         agent: {
                             prompt: {
                                 prompt: systemPromptOverride
+                            },
+                            firstMessage: userTier === 'broke' ? "WHAT DO YOU WANT, LOOZER? SPENT MORE MONEY ON COFFEE?" : "Greetings, Master. How shall we manage your capital?",
+                            voice: {
+                                voiceId: "EXAVITQu4vr4xnSDxMaL"
                             }
                         }
                     }
@@ -250,8 +254,8 @@ export default function AIChatView({
                             </div>
                             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar-orange">
                                 {messages.map((msg, i) => (
-                                    <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                                        <div className={`max-w-[90%] px-3 py-2 text-xs font-mono uppercase tracking-tighter ${msg.role === "user" ? "bg-orange-900/40 text-orange-200" : "text-orange-500 bg-orange-500/5 border-l-2 border-orange-500"
+                                    <div key={i} className={`flex w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                                        <div className={`w-full px-3 py-2 text-xs font-mono uppercase tracking-tighter ${msg.role === "user" ? "bg-orange-900/40 text-orange-200" : "text-orange-500 bg-orange-500/5 border-l-2 border-orange-500"
                                             }`}>
                                             {msg.content}
                                         </div>
@@ -369,9 +373,9 @@ export default function AIChatView({
                                 key={i}
                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                                className={`flex w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                             >
-                                <div className={`relative px-5 py-3 rounded-2xl text-sm leading-relaxed transition-all ${msg.role === "user"
+                                <div className={`relative w-full px-5 py-3 rounded-2xl text-sm leading-relaxed transition-all ${msg.role === "user"
                                     ? (userTier === "posh"
                                         ? "bg-amber-400 text-black font-bold rounded-tr-none shadow-[0_10px_20px_rgba(251,191,36,0.2)]"
                                         : "bg-blue-600 text-white font-medium rounded-tr-none")
