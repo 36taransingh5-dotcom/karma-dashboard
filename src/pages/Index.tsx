@@ -5,9 +5,6 @@ import {
   Settings,
   X,
   ShieldCheck,
-  Crown,
-  Skull,
-  Meh,
 } from "lucide-react";
 import type { UserTier, AppView } from "@/lib/tierConfig";
 import { containerClass, sidebarClass, INITIAL_TRANSACTIONS } from "@/lib/tierConfig";
@@ -17,11 +14,6 @@ import TransactionsView from "@/components/TransactionsView";
 import SettingsView from "@/components/SettingsView";
 import AIAdvisor from "@/components/AIAdvisor";
 
-const TIER_ICONS: Record<UserTier, React.ReactNode> = {
-  posh: <Crown className="w-4 h-4" />,
-  middle: <Meh className="w-4 h-4" />,
-  broke: <Skull className="w-4 h-4" />,
-};
 
 export default function Index() {
   const [appState, setAppState] = useState<AppView>("onboarding");
@@ -130,29 +122,6 @@ export default function Index() {
 
   return (
     <div className={containerClass[userTier]}>
-      {/* DEV CONTROLS */}
-      <div className="fixed top-4 right-4 z-[9999] bg-zinc-800 text-white rounded-lg p-4 shadow-2xl border border-zinc-600 font-sans text-sm w-64">
-        <div className="text-xs uppercase tracking-wider text-zinc-400 mb-2 font-semibold">Dev Controls</div>
-        <div className="flex gap-1 mb-3">
-          {(["posh", "middle", "broke"] as UserTier[]).map((tier) => (
-            <button
-              key={tier}
-              onClick={() => { setUserTier(tier); setBalanceRevealed(false); setClosedAds([]); }}
-              className={`flex-1 px-2 py-1.5 rounded text-xs font-bold capitalize flex items-center justify-center gap-1 transition-colors ${
-                userTier === tier ? "bg-white text-zinc-900" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-              }`}
-            >
-              {TIER_ICONS[tier]} {tier}
-            </button>
-          ))}
-        </div>
-        <div>
-          <label className="text-xs text-zinc-400 flex justify-between">
-            Karma Score <span className="text-white font-bold">{karmaScore}</span>
-          </label>
-          <input type="range" min="0" max="100" value={karmaScore} onChange={(e) => setKarmaScore(parseInt(e.target.value))} className="w-full mt-1 accent-blue-500" />
-        </div>
-      </div>
 
       {/* FAKE ADS — BROKE ONLY */}
       {userTier === "broke" && fakeAds.filter((ad) => !closedAds.includes(ad.id)).map((ad) => (
