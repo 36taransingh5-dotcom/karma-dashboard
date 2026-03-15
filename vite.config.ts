@@ -8,9 +8,17 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      "/api/ai/chat": {
+        target: "https://ai.hackclub.com/proxy/v1/chat/completions",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/ai\/chat/, ""),
+      },
+    },
     hmr: {
       overlay: false,
     },
+
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

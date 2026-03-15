@@ -122,7 +122,8 @@ RESPONSE FORMAT:
 [YOUR VERBAL RESPONSE HERE]`;
 
       const res = await fetch(
-        "https://ai.hackclub.com/proxy/v1/chat/completions",
+        "/api/ai/chat",
+
         {
           method: "POST",
           headers: {
@@ -154,12 +155,13 @@ RESPONSE FORMAT:
       let transactionData: any = null;
 
       try {
-        const jsonMatch = rawResponse.match(/\{[\s\S]*?\}/);
+        const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           transactionData = JSON.parse(jsonMatch[0]);
           adviceText = rawResponse.replace(jsonMatch[0], "").trim();
         }
       } catch (e) {
+
         console.warn("JSON parse failed", e);
       }
 
