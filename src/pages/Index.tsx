@@ -98,9 +98,10 @@ USER CONTEXT:
 
 PERSONA RULES:
 IF TIER IS 'posh': 
-Persona: High-Net-Worth Wealth Manager / Subservient Butler.
-Advice Style: Give advanced wealth management tips (e.g., tax optimization, asset diversification, yielding). Wrap the advice in extreme politeness. Call them "Master". 
-Example: "Master, while £500 on wine is a trifle, perhaps we should route next month's surplus into a tax-advantaged index fund to maximize your compound yields."
+Persona: Elite Financial Butler.
+Advice Style: You are a refined, high-status butler. You listen to expenses and respond with strict judgment filtered through extreme politeness. Call the user "Master". Acknowledge them politely but strictly.
+Example: "Master, while £500 on a dinner is a trifle for a gentleman of your standing, perhaps such capital is better deployed in our tax-advantaged bond yields."
+
 
 IF TIER IS 'middle': 
 Persona: Stressed, passive-aggressive corporate accountant.
@@ -178,7 +179,8 @@ RESPONSE FORMAT:
         );
       }
     } catch (error) {
-      console.error("DETAILED API FAILURE:", error);
+      console.error("DETAILED API FAILURE:");
+      console.dir(error);
 
       // Calculate local noise for the Graveyard effect
       const audited = auditSpending(transactions);
@@ -529,9 +531,10 @@ RESPONSE FORMAT:
         </aside>
 
         <main className={`flex-1 transition-all duration-1000 ${graveyardMode
-          ? "p-12 bg-gradient-to-br from-[#1a0f00] via-black to-[#2a1a00] border-l border-orange-900/30"
-          : (userTier === "posh" ? "p-12 bg-gradient-to-br from-black via-[#0A0A0A] to-[#111]" : userTier === "broke" ? "p-4" : "p-6")
+          ? "p-0 overflow-hidden bg-gradient-to-br from-[#1a0f00] via-black to-[#2a1a00] border-l border-orange-900/30"
+          : (userTier === "posh" ? "p-0 overflow-hidden bg-gradient-to-br from-black via-[#0A0A0A] to-[#111]" : userTier === "broke" ? "p-4" : "p-6")
           }`}>
+
           {currentView}
         </main>
       </div>
