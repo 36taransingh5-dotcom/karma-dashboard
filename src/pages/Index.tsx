@@ -32,13 +32,52 @@ export default function Index() {
   const [balanceRevealed, setBalanceRevealed] = useState(false);
   const [closedAds, setClosedAds] = useState<number[]>([]);
 
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
   const totalBalance = 4267.83;
 
-  const addExpense = (amount: string, category: string) => {
+  const addExpense = async (amount: string, category: string) => {
+    const numAmount = parseFloat(amount);
     setTransactions((prev) => [
-      { id: Date.now(), amount: parseFloat(amount), category, date: new Date().toISOString().split("T")[0] },
+      { id: Date.now(), amount: numAmount, category, date: new Date().toISOString().split("T")[0] },
       ...prev,
     ]);
+
+    // Karma auto-adjustment
+    if (numAmount > 100) {
+      setKarmaScore((k) => Math.max(0, k - 10));
+    } else if (numAmount < 10) {
+      setKarmaScore((k) => Math.min(100, k + 2));
+    }
+
+    // Call Gemini API
+    setAiLoading(true);
+    setAiResponse(null);
+    try {
+      const res = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyCf_oxuByYGLkzqBZRO5eYL78UL8VZo6-c",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system_instruction: {
+              parts: [{
+                text: `You are EgoFi AI. User Tier: ${userTier}, Karma: ${karmaScore}. If Posh: Be a sycophant butler. If Middle: Be passive-aggressive. If Broke: Be a screaming hustle-bro. The user just spent £${numAmount.toFixed(2)} on ${category}. Roast them or praise them in 1 sentence.`
+              }]
+            },
+            contents: [{ parts: [{ text: `I just spent £${numAmount.toFixed(2)} on ${category}.` }] }],
+          }),
+        }
+      );
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "The AI is speechless.";
+      setAiResponse(text);
+    } catch {
+      setAiResponse("AI judgment failed. You got lucky this time.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleOnboardingComplete = (tier: UserTier, karma: number) => {
