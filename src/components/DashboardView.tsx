@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import type { UserTier, Transaction } from "@/lib/tierConfig";
 import { buttonClass, cardClass, inputClass } from "@/lib/tierConfig";
@@ -9,8 +10,8 @@ interface DashboardViewProps {
 }
 
 export default function DashboardView({ userTier, transactions, onAddExpense }: DashboardViewProps) {
-  const [amount, setAmount] = __useState("");
-  const [category, setCategory] = __useState("");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("");
 
   const handleAdd = () => {
     if (!amount || !category) return;
@@ -73,6 +74,3 @@ export default function DashboardView({ userTier, transactions, onAddExpense }: 
     </div>
   );
 }
-
-// Inline useState import to avoid circular issues
-import { useState as __useState } from "react";
