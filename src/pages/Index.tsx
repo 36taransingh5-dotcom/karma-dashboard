@@ -5,10 +5,8 @@ import {
   Settings,
   X,
   ShieldCheck,
-  Crown,
-  Skull,
-  Meh,
 } from "lucide-react";
+import type { UserTier, AppView } from "@/lib/tierConfig";
 import type { UserTier, AppView } from "@/lib/tierConfig";
 import { containerClass, sidebarClass, INITIAL_TRANSACTIONS } from "@/lib/tierConfig";
 import Onboarding from "@/components/Onboarding";
