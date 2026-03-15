@@ -15,11 +15,6 @@ import TransactionsView from "@/components/TransactionsView";
 import SettingsView from "@/components/SettingsView";
 import AIAdvisor from "@/components/AIAdvisor";
 
-const TIER_ICONS: Record<UserTier, React.ReactNode> = {
-  posh: <Crown className="w-4 h-4" />,
-  middle: <Meh className="w-4 h-4" />,
-  broke: <Skull className="w-4 h-4" />,
-};
 
 export default function Index() {
   const [appState, setAppState] = useState<AppView>("onboarding");
