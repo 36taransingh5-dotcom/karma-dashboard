@@ -7,7 +7,6 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { UserTier, AppView } from "@/lib/tierConfig";
-import type { UserTier, AppView } from "@/lib/tierConfig";
 import { containerClass, sidebarClass, INITIAL_TRANSACTIONS } from "@/lib/tierConfig";
 import Onboarding from "@/components/Onboarding";
 import DashboardView from "@/components/DashboardView";
