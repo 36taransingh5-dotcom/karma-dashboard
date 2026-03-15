@@ -91,7 +91,7 @@ const QUESTIONS: Question[] = [
 ];
 
 interface OnboardingProps {
-  onComplete: (tier: UserTier, karma: number) => void;
+  onComplete: (tier: UserTier) => void;
 }
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
@@ -109,13 +109,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     }
   };
 
-  const calculateTier = (): { tier: UserTier; karma: number } => {
+  const calculateTier = (): UserTier => {
     const total = scores.reduce((a, b) => a + b, 0);
     const max = QUESTIONS.length * 10;
     const pct = (total / max) * 100;
-    if (pct >= 65) return { tier: "posh", karma: Math.round(pct) };
-    if (pct >= 30) return { tier: "middle", karma: Math.round(pct) };
-    return { tier: "broke", karma: Math.round(pct) };
+    if (pct >= 65) return "posh";
+    if (pct >= 30) return "middle";
+    return "broke";
   };
 
   const progress = ((currentQ + (showResult ? 1 : 0)) / QUESTIONS.length) * 100;
@@ -172,8 +172,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </p>
             <button
               onClick={() => {
-                const { tier, karma } = calculateTier();
-                onComplete(tier, karma);
+                const tier = calculateTier();
+                onComplete(tier);
               }}
               className="inline-flex items-center gap-2 bg-gradient-to-tr from-[#996515] via-[#D4AF37] to-[#F9E27D] text-black font-bold px-8 py-3 rounded-xl hover:brightness-110 transition-all text-lg"
             >

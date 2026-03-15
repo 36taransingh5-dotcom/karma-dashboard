@@ -6,19 +6,17 @@ import {
   X,
   ShieldCheck,
 } from "lucide-react";
-import type { UserTier, AppView } from "@/lib/tierConfig";
+import type { UserTier, AppView, Transaction } from "@/lib/tierConfig";
 import { containerClass, sidebarClass, INITIAL_TRANSACTIONS } from "@/lib/tierConfig";
 import Onboarding from "@/components/Onboarding";
-import DashboardView from "@/components/DashboardView";
+import AIChatView from "@/components/AIChatView";
 import TransactionsView from "@/components/TransactionsView";
 import SettingsView from "@/components/SettingsView";
-import AIAdvisor from "@/components/AIAdvisor";
 
 
 export default function Index() {
   const [appState, setAppState] = useState<AppView>("onboarding");
   const [userTier, setUserTier] = useState<UserTier>("middle");
-  const [karmaScore, setKarmaScore] = useState(50);
   const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
   const [activeNav, setActiveNav] = useState<"Dashboard" | "Transactions" | "Settings">("Dashboard");
   const [balanceRevealed, setBalanceRevealed] = useState(false);
@@ -29,52 +27,94 @@ export default function Index() {
 
   const totalBalance = 4267.83;
 
-  const addExpense = async (amount: string, category: string) => {
+  const addExpense = async (amount: string, category: string, quantity?: string, price?: string) => {
     const numAmount = parseFloat(amount);
+    const numPrice = price ? parseFloat(price) : numAmount;
+    const numQty = quantity ? parseInt(quantity) : 1;
+
     setTransactions((prev) => [
-      { id: Date.now(), amount: numAmount, category, date: new Date().toISOString().split("T")[0] },
+      {
+        id: Date.now(),
+        amount: numAmount,
+        price: numPrice,
+        quantity: numQty,
+        category,
+        date: new Date().toISOString().split("T")[0]
+      },
       ...prev,
     ]);
+  };
 
-    // Karma auto-adjustment
-    if (numAmount > 100) {
-      setKarmaScore((k) => Math.max(0, k - 10));
-    } else if (numAmount < 10) {
-      setKarmaScore((k) => Math.min(100, k + 2));
-    }
-
-    // Call Gemini API
+  const handleChat = async (input: string) => {
     setAiLoading(true);
     setAiResponse(null);
     try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyAvgGn5QX58O-eOaJoGiLO93ap7ZVPUCLE";
+
+      const systemPrompt = `You are the EgoFi Financial Advisor. 
+Current User Tier: ${userTier}.
+Your Persona:
+- If Posh: A hyper-sophisticated, slightly sycophantic but firm Private Wealth Manager. You appreciate luxury but prioritize capital preservation.
+- If Middle: A pragmatic, slightly passive-aggressive neighborhood accountant.
+- If Broke: A screaming, ultra-intense hustle-culture coach who views every penny spent as a sin against the grind.
+
+TASKS:
+1. Extract transaction data: If the user describes an expense, identify: category, total_amount, quantity (default 1), unit_price (default total_amount).
+2. Provide Financial Advice: Give actual, useful financial advice tailored to the user's tier. Do NOT just flatter them. If they spend a lot, warn them of the risks.
+
+RESPONSE FORMAT:
+You must respond with a JSON block followed by your spoken advice.
+Format:
+{ "transaction": { "category": string, "amount": number, "quantity": number, "unit_price": number } | null }
+[YOUR ADVICE HERE]`;
+
       const res = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyCf_oxuByYGLkzqBZRO5eYL78UL8VZo6-c",
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            system_instruction: {
+            contents: [{
+              role: "user",
               parts: [{
-                text: `You are EgoFi AI. User Tier: ${userTier}, Karma: ${karmaScore}. If Posh: Be a sycophant butler. If Middle: Be passive-aggressive. If Broke: Be a screaming hustle-bro. The user just spent £${numAmount.toFixed(2)} on ${category}. Roast them or praise them in 1 sentence.`
+                text: `${systemPrompt}\n\nUser Message: ${input}`
               }]
-            },
-            contents: [{ parts: [{ text: `I just spent £${numAmount.toFixed(2)} on ${category}.` }] }],
+            }],
           }),
         }
       );
+
       const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "The AI is speechless.";
-      setAiResponse(text);
-    } catch {
-      setAiResponse("AI judgment failed. You got lucky this time.");
+      if (!res.ok) throw new Error(data?.error?.message || "API Error");
+
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+      let advice = rawText;
+      try {
+        const jsonMatch = rawText.match(/\{[\s\S]*?\}/);
+        if (jsonMatch) {
+          const jsonData = JSON.parse(jsonMatch[0]);
+          if (jsonData.transaction) {
+            const { amount, category, quantity, unit_price } = jsonData.transaction;
+            addExpense(amount.toString(), category, quantity?.toString(), unit_price?.toString());
+          }
+          advice = rawText.replace(jsonMatch[0], "").trim();
+        }
+      } catch (e) {
+        console.warn("Failed to parse AI JSON", e);
+      }
+
+      setAiResponse(advice || "I've processed that for you.");
+    } catch (error) {
+      console.error("Chat failed:", error);
+      setAiResponse("My financial processing units are currently occupied.");
     } finally {
       setAiLoading(false);
     }
   };
 
-  const handleOnboardingComplete = (tier: UserTier, karma: number) => {
+  const handleOnboardingComplete = (tier: UserTier) => {
     setUserTier(tier);
-    setKarmaScore(karma);
     setAppState("dashboard");
   };
 
@@ -116,17 +156,31 @@ export default function Index() {
     switch (activeNav) {
       case "Transactions": return <TransactionsView userTier={userTier} extraTransactions={transactions.filter(t => !INITIAL_TRANSACTIONS.find(it => it.id === t.id))} />;
       case "Settings": return <SettingsView userTier={userTier} onHardReset={handleHardReset} />;
-      default: return <DashboardView userTier={userTier} transactions={transactions} onAddExpense={addExpense} />;
+      default: return (
+        <AIChatView
+          userTier={userTier}
+          transactions={transactions}
+          onAddExpense={addExpense}
+          onChat={handleChat}
+          aiLoading={aiLoading}
+          aiResponse={aiResponse}
+        />
+      );
     }
   })();
 
   return (
     <div className={containerClass[userTier]}>
-
       {/* FAKE ADS — BROKE ONLY */}
       {userTier === "broke" && fakeAds.filter((ad) => !closedAds.includes(ad.id)).map((ad) => (
         <div key={ad.id} className="fixed z-[999] bg-yellow-400 text-red-700 font-black text-lg px-6 py-4 shadow-2xl border-4 border-red-600 animate-pulse"
-          style={{ top: ad.top, left: ad.left, right: (ad as any).right, bottom: (ad as any).bottom, transform: `rotate(${ad.rotate})` }}>
+          style={{
+            top: (ad as any).top,
+            bottom: (ad as any).bottom,
+            left: (ad as any).left,
+            right: (ad as any).right,
+            transform: `rotate(${ad.rotate})`
+          }}>
           <div>{ad.text}</div>
           <button onClick={() => setClosedAds((prev) => [...prev, ad.id])}
             className="absolute -top-1 -right-1 bg-black text-yellow-400 rounded-full flex items-center justify-center hover:bg-red-800"
@@ -140,12 +194,10 @@ export default function Index() {
         {/* LEFT SIDEBAR */}
         <aside className={`w-64 flex-shrink-0 flex flex-col ${sidebarClass[userTier]}`}>
           <div className={`p-6 ${userTier === "posh" ? "py-10" : ""}`}>
-            <h1 className={`text-2xl font-bold tracking-tight ${
-              userTier === "posh" ? "text-amber-300" : userTier === "broke" ? "text-lime-400" : "text-slate-900"
-            }`}>EgoFi</h1>
-            <p className={`text-xs mt-1 ${
-              userTier === "posh" ? "text-amber-500/40" : userTier === "broke" ? "text-red-500" : "text-slate-400"
-            }`}>
+            <h1 className={`text-2xl font-bold tracking-tight ${userTier === "posh" ? "text-amber-300" : userTier === "broke" ? "text-lime-400" : "text-slate-900"
+              }`}>EgoFi</h1>
+            <p className={`text-xs mt-1 ${userTier === "posh" ? "text-amber-500/40" : userTier === "broke" ? "text-red-500" : "text-slate-400"
+              }`}>
               {userTier === "posh" ? "Wealth Management Suite" : userTier === "broke" ? "FINANCIAL INTERVENTION MODE" : "Personal Finance Dashboard"}
             </p>
           </div>
@@ -163,40 +215,28 @@ export default function Index() {
             ))}
           </nav>
 
-          {/* TOTAL BALANCE */}
           <div className={`p-6 ${userTier === "posh" ? "pb-10" : ""}`}>
-            <div className={`text-xs uppercase tracking-wider mb-2 ${
-              userTier === "posh" ? "text-amber-500/50" : userTier === "broke" ? "text-lime-600" : "text-slate-400"
-            }`}>Total Balance</div>
+            <div className={`text-xs uppercase tracking-wider mb-2 ${userTier === "posh" ? "text-amber-500/50" : userTier === "broke" ? "text-lime-600" : "text-slate-400"
+              }`}>Total Balance</div>
             {userTier === "broke" && !balanceRevealed ? (
               <button onClick={() => setBalanceRevealed(true)}
                 className="bg-red-600 text-black text-[10px] font-black uppercase px-2 py-2 leading-tight hover:bg-yellow-400 transition-colors flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3" /> PROVE YOU AREN'T A ROBOT TO VIEW BALANCE
               </button>
             ) : (
-              <div className={`text-3xl font-bold ${
-                userTier === "posh" ? "text-amber-300" : userTier === "broke" ? "text-lime-400" : "text-slate-900"
-              }`}>
+              <div className={`text-3xl font-bold ${userTier === "posh" ? "text-amber-300" : userTier === "broke" ? "text-lime-400" : "text-slate-900"
+                }`}>
                 £{totalBalance.toLocaleString("en-GB", { minimumFractionDigits: 2 })}
               </div>
             )}
-            <div className={`text-xs mt-1 ${
-              userTier === "posh" ? "text-amber-500/30" : userTier === "broke" ? "text-red-400" : "text-slate-400"
-            }`}>Karma: {karmaScore}/100</div>
+            <div className={`text-xs mt-1 ${userTier === "posh" ? "text-amber-500/30" : userTier === "broke" ? "text-red-400" : "text-slate-400"
+              }`}>{userTier.toUpperCase()} TIER</div>
           </div>
         </aside>
 
-        {/* MAIN CONTENT */}
         <main className={`flex-1 ${userTier === "posh" ? "p-12" : userTier === "broke" ? "p-4" : "p-6"}`}>
           {currentView}
         </main>
-
-        {/* RIGHT PANEL — AI ADVISOR */}
-        <aside className={`w-80 flex-shrink-0 ${userTier === "posh" ? "p-8" : "p-4"} ${
-          userTier === "posh" ? "border-l border-amber-500/10" : userTier === "broke" ? "border-l-4 border-red-600" : "border-l border-slate-200"
-        }`}>
-          <AIAdvisor userTier={userTier} karmaScore={karmaScore} aiResponse={aiResponse} aiLoading={aiLoading} />
-        </aside>
       </div>
     </div>
   );

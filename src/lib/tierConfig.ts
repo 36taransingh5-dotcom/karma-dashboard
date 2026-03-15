@@ -3,43 +3,39 @@ export type AppView = "onboarding" | "dashboard" | "transactions" | "settings";
 
 export interface Transaction {
   id: number;
-  amount: number;
+  amount: number; // This will be the total (price * quantity)
+  price: number;
+  quantity: number;
   category: string;
   date: string;
   description?: string;
 }
 
 export const INITIAL_TRANSACTIONS: Transaction[] = [
-  { id: 1, amount: 42.5, category: "Dining", date: "2026-03-13", description: "Nando's with mates" },
-  { id: 2, amount: 120.0, category: "Shopping", date: "2026-03-12", description: "ASOS haul" },
-  { id: 3, amount: 8.99, category: "Coffee", date: "2026-03-11", description: "Oat milk latte" },
-  { id: 4, amount: 55.0, category: "Transport", date: "2026-03-10", description: "Uber surge pricing" },
+  { id: 1, amount: 42.5, price: 42.5, quantity: 1, category: "Dining", date: "2026-03-13", description: "Nando's with mates" },
+  { id: 2, amount: 120.0, price: 120.0, quantity: 1, category: "Shopping", date: "2026-03-12", description: "ASOS haul" },
+  { id: 3, amount: 8.99, price: 8.99, quantity: 1, category: "Coffee", date: "2026-03-11", description: "Oat milk latte" },
+  { id: 4, amount: 55.0, price: 55.0, quantity: 1, category: "Transport", date: "2026-03-10", description: "Uber surge pricing" },
 ];
 
 export const FULL_TRANSACTIONS: Transaction[] = [
   ...INITIAL_TRANSACTIONS,
-  { id: 5, amount: 15.0, category: "Subscriptions", date: "2026-03-09", description: "Netflix Premium" },
-  { id: 6, amount: 340.0, category: "Bills", date: "2026-03-08", description: "Electric bill" },
-  { id: 7, amount: 22.5, category: "Dining", date: "2026-03-07", description: "Deliveroo order" },
-  { id: 8, amount: 67.0, category: "Shopping", date: "2026-03-06", description: "New trainers" },
-  { id: 9, amount: 4.5, category: "Coffee", date: "2026-03-05", description: "Flat white" },
-  { id: 10, amount: 200.0, category: "Transport", date: "2026-03-04", description: "Monthly Oyster card" },
+  { id: 5, amount: 15.0, price: 15.0, quantity: 1, category: "Subscriptions", date: "2026-03-09", description: "Netflix Premium" },
+  { id: 6, amount: 340.0, price: 340.0, quantity: 1, category: "Bills", date: "2026-03-08", description: "Electric bill" },
+  { id: 7, amount: 22.5, price: 22.5, quantity: 1, category: "Dining", date: "2026-03-07", description: "Deliveroo order" },
+  { id: 8, amount: 67.0, price: 67.0, quantity: 1, category: "Shopping", date: "2026-03-06", description: "New trainers" },
+  { id: 9, amount: 4.5, price: 4.5, quantity: 1, category: "Coffee", date: "2026-03-05", description: "Flat white" },
+  { id: 10, amount: 200.0, price: 200.0, quantity: 1, category: "Transport", date: "2026-03-04", description: "Monthly Oyster card" },
 ];
 
-export function getAIMessage(tier: UserTier, karma: number): string {
+export function getAIMessage(tier: UserTier): string {
   if (tier === "posh") {
-    if (karma > 80) return "Your Excellency, every transaction you make elevates the economy. The world is grateful for your patronage. Shall I polish your portfolio?";
-    if (karma > 50) return "Yes, Master. A brilliant purchase. Your portfolio shall recover in moments.";
-    return "Sir, if I may — your recent spending has been... uncharacteristic. Perhaps a quiet word with the accountant?";
+    return "Your Excellency, every transaction you make elevates the economy. Shall I polish your portfolio?";
   }
   if (tier === "middle") {
-    if (karma < 30) return "Honestly? I'm disappointed. Your savings rate is in the toilet. Your future self is going to HATE you. Start meal prepping. NOW.";
-    if (karma > 70) return "Not bad! You're actually doing okay. Keep this up and you might retire before 70. Maybe.";
-    return "Are you sure about that £5 coffee? Your pension is crying. Maybe consider a thermos?";
+    return "Are you sure about that spending? Your pension is crying. Maybe consider a thermos?";
   }
   // broke
-  if (karma < 30) return "🚨 CODE RED! YOUR ACCOUNT IS ON LIFE SUPPORT! SELL EVERYTHING! START A GOFUNDME! YOUR BANK MANAGER IS CRYING!";
-  if (karma > 70) return "OK FINE, YOU'RE SLIGHTLY LESS BROKE THAN YESTERDAY. DON'T LET IT GO TO YOUR HEAD. KEEP HUSTLING!";
   return "WAKE UP! STOP BUYING TAKEAWAY AND START DROPSHIPPING! YOUR BANK CALLED — THEY WANT THEIR OVERDRAFT BACK!";
 }
 
