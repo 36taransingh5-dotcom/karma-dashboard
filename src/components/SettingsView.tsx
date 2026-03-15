@@ -21,23 +21,19 @@ export default function SettingsView({ userTier, onHardReset }: SettingsViewProp
   return (
     <div className="max-w-lg">
       <div className={cardClass[userTier]}>
-        <h2 className={`font-bold mb-6 ${
-          userTier === "posh" ? "text-xl text-amber-300" : userTier === "broke" ? "text-lg uppercase text-lime-400" : "text-lg text-slate-800"
-        }`}>
+        <h2 className={`font-bold mb-6 ${userTier === "posh" ? "text-xl text-amber-300" : userTier === "broke" ? "text-lg uppercase text-lime-400" : "text-lg text-slate-800"
+          }`}>
           {userTier === "posh" ? "Preferences" : userTier === "broke" ? "⚙️ SETTINGS (DON'T TOUCH)" : "Settings"}
         </h2>
 
         {/* Profile */}
         <div className="mb-6">
-          <h3 className={`text-sm font-semibold mb-3 ${
-            userTier === "posh" ? "text-amber-400/70" : userTier === "broke" ? "text-lime-500 uppercase" : "text-slate-600"
-          }`}>Profile</h3>
-          <div className={`flex items-center gap-4 p-4 rounded-xl ${
-            userTier === "posh" ? "bg-white/5" : userTier === "broke" ? "bg-zinc-800 border-2 border-lime-600" : "bg-slate-50"
-          }`}>
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
-              userTier === "posh" ? "bg-amber-500/20 text-amber-300" : userTier === "broke" ? "bg-red-600 text-black" : "bg-blue-100 text-blue-600"
+          <h3 className={`text-sm font-semibold mb-3 ${userTier === "posh" ? "text-amber-400/70" : userTier === "broke" ? "text-lime-500 uppercase" : "text-slate-600"
+            }`}>Profile</h3>
+          <div className={`flex items-center gap-4 p-4 rounded-xl ${userTier === "posh" ? "bg-white/5" : userTier === "broke" ? "bg-zinc-800 border-2 border-lime-600" : "bg-slate-50"
             }`}>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${userTier === "posh" ? "bg-amber-500/20 text-amber-300" : userTier === "broke" ? "bg-red-600 text-black" : "bg-blue-100 text-blue-600"
+              }`}>
               {userTier === "posh" ? "👑" : userTier === "broke" ? "💀" : "U"}
             </div>
             <div>
@@ -51,38 +47,75 @@ export default function SettingsView({ userTier, onHardReset }: SettingsViewProp
           </div>
         </div>
 
+        {/* Premium Customization (Posh Only) */}
+        {userTier === "posh" && (
+          <div className="mb-8 p-4 border border-white/10 bg-white/5 rounded-none">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] mb-4 text-white">Elite Customization</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] uppercase font-bold text-white/30 mb-2 block tracking-widest">Interface Gloss</label>
+                <div className="flex gap-2">
+                  {["Natural", "Glass", "Mirror"].map(opt => (
+                    <button key={opt} className={`flex-1 text-[10px] py-1 border border-white/20 uppercase tracking-widest ${opt === "Glass" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-white/30 mb-2 block tracking-widest">Accent Core</label>
+                <div className="flex gap-4">
+                  {["#FFFFFF", "#C0C0C0", "#E5E4E2"].map(color => (
+                    <div key={color} className={`w-4 h-4 rounded-full border border-white/20 cursor-pointer ${color === "#FFFFFF" ? "ring-2 ring-white ring-offset-2 ring-offset-black" : ""}`} style={{ backgroundColor: color }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Toggles */}
-        <div className="space-y-4 mb-8">
+        <div className="space-y-6 mb-8">
           <div className="flex items-center justify-between">
-            <span className="text-sm">Push Notifications</span>
+            <span className={`text-sm ${userTier === "posh" ? "uppercase tracking-widest text-xs" : ""}`}>Push Notifications</span>
             <button onClick={() => setPushNotifs(!pushNotifs)} className={`w-11 h-6 rounded-full relative transition-colors ${toggleClass(pushNotifs)}`}>
               <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${pushNotifs ? "left-5.5" : "left-0.5"}`} style={{ left: pushNotifs ? "22px" : "2px" }} />
             </button>
           </div>
+
+          <div className="flex flex-col gap-2">
+            <span className={`text-sm ${userTier === "posh" ? "uppercase tracking-widest text-xs" : ""}`}>Advisor Prompting</span>
+            <div className="flex gap-2">
+              {["Passive", "Standard", "Intensive"].map(m => (
+                <button key={m} className={`flex-1 text-[10px] py-2 border ${userTier === "posh" ? "border-white/20 text-white" : userTier === "broke" ? "border-lime-900 text-lime-600 font-mono" : "border-slate-200 text-slate-600"} ${m === "Standard" ? (userTier === "posh" ? "bg-white text-black" : userTier === "broke" ? "bg-red-700 text-black border-red-700" : "bg-blue-600 text-white border-blue-600") : ""}`}>
+                  {m.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Hard Reset */}
-        <div className={`pt-6 border-t ${userTier === "posh" ? "border-amber-500/10" : userTier === "broke" ? "border-red-600" : "border-slate-200"}`}>
+        <div className={`pt-6 border-t ${userTier === "posh" ? "border-white/10" : userTier === "broke" ? "border-red-600" : "border-slate-200"}`}>
           {!showConfirm ? (
             <button
               onClick={() => setShowConfirm(true)}
-              className={`flex items-center gap-2 text-sm ${
-                userTier === "broke" ? "text-red-500 font-black uppercase" : "text-red-500 hover:text-red-600"
-              }`}
+              className={`flex items-center gap-2 text-sm ${userTier === "broke" ? "text-red-500 font-black uppercase" : userTier === "posh" ? "text-white/40 uppercase tracking-widest text-[10px] hover:text-white" : "text-red-500 hover:text-red-600"
+                }`}
             >
               <RotateCcw className="w-4 h-4" />
-              Hard Reset Account
+              {userTier === "posh" ? "Terminate Account Instance" : "Hard Reset Account"}
             </button>
           ) : (
             <div className="space-y-3">
-              <p className={`text-sm ${userTier === "broke" ? "text-red-400 uppercase font-bold" : "text-red-500"}`}>
-                This will return you to the onboarding quiz. Are you sure?
+              <p className={`text-sm ${userTier === "broke" ? "text-red-400 uppercase font-bold" : userTier === "posh" ? "text-white/60 text-xs italic" : "text-red-500"}`}>
+                {userTier === "posh" ? "This will dissolve your elite membership and reset all ledgers. Proceed?" : "This will return you to the onboarding quiz. Are you sure?"}
               </p>
               <div className="flex gap-2">
-                <button onClick={onHardReset} className={`${buttonClass[userTier]} text-sm`}>
-                  {userTier === "broke" ? "DESTROY IT ALL" : "Yes, reset"}
+                <button onClick={onHardReset} className={`${buttonClass[userTier]} text-[10px]`}>
+                  {userTier === "broke" ? "DESTROY IT ALL" : userTier === "posh" ? "CONFIRM DISSOLUTION" : "Yes, reset"}
                 </button>
-                <button onClick={() => setShowConfirm(false)} className="text-sm text-slate-400 hover:text-slate-600 px-3">
+                <button onClick={() => setShowConfirm(false)} className={`text-xs ${userTier === "posh" ? "text-white/20 hover:text-white" : "text-slate-400 hover:text-slate-600"} px-3`}>
                   Cancel
                 </button>
               </div>

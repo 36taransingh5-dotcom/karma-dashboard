@@ -40,31 +40,31 @@ export function getAIMessage(tier: UserTier): string {
 }
 
 export const containerClass: Record<UserTier, string> = {
-  posh: "bg-[#2A0505] text-amber-200 font-serif min-h-screen transition-all duration-700",
-  middle: "bg-white text-slate-900 font-sans min-h-screen transition-all duration-300",
+  posh: "bg-[#050505] text-white font-sans min-h-screen transition-all duration-700 selection:bg-white selection:text-black",
+  middle: "bg-[#F4F4F4] text-slate-900 font-sans min-h-screen transition-all duration-300",
   broke: "bg-black text-lime-400 font-mono min-h-screen border-8 border-red-600 transition-all duration-100",
 };
 
 export const buttonClass: Record<UserTier, string> = {
-  posh: "bg-gradient-to-tr from-[#996515] via-[#D4AF37] to-[#F9E27D] text-black font-bold hover:brightness-110 transition-all duration-700 px-4 py-2 rounded-lg",
-  middle: "bg-blue-600 text-white rounded-2xl px-4 py-2 hover:bg-blue-700 transition-colors font-medium",
+  posh: "bg-white text-black font-bold hover:bg-slate-100 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all duration-500 px-8 py-3 rounded-none uppercase text-[10px] tracking-[0.3em] active:scale-95",
+  middle: "bg-[#003366] text-white rounded-none px-6 py-2 hover:bg-[#002244] transition-colors font-bold uppercase text-xs tracking-wider",
   broke: "bg-red-600 text-black font-black uppercase rounded-none px-4 py-2 hover:bg-yellow-400 transition-none",
 };
 
 export const cardClass: Record<UserTier, string> = {
-  posh: "bg-white/5 border border-amber-500/20 rounded-xl p-6 backdrop-blur-md shadow-[0_0_15px_rgba(251,191,36,0.1)]",
-  middle: "bg-white border border-slate-200 rounded-2xl p-5 shadow-sm",
+  posh: "bg-white/[0.03] border border-white/[0.08] rounded-none p-10 backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:border-white/20 transition-all duration-700",
+  middle: "bg-white border border-[#D1D1D1] rounded-none p-5 shadow-none",
   broke: "bg-zinc-900 border-4 border-lime-400 p-4",
 };
 
 export const inputClass: Record<UserTier, string> = {
-  posh: "bg-white/5 border border-amber-500/20 text-amber-200 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-400 placeholder:text-amber-700/50 backdrop-blur-sm",
-  middle: "bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400",
+  posh: "bg-transparent border-b border-white/10 text-white rounded-none px-0 py-3 focus:outline-none focus:border-white placeholder:text-white/10 transition-all duration-500 font-light tracking-[0.1em] text-lg",
+  middle: "bg-white border border-[#D1D1D1] text-slate-900 rounded-none px-3 py-2 focus:outline-none focus:border-[#003366] placeholder:text-slate-400 transition-all",
   broke: "bg-black border-2 border-lime-400 text-lime-400 px-3 py-2 focus:outline-none placeholder:text-lime-700 font-mono",
 };
 
 export const sidebarClass: Record<UserTier, string> = {
-  posh: "bg-[#1A0303]/80 border-r border-amber-500/10",
-  middle: "bg-slate-50 border-r border-slate-200",
+  posh: "bg-black border-r border-white/5",
+  middle: "bg-white border-r border-[#D1D1D1]",
   broke: "bg-zinc-950 border-r-4 border-red-600",
 };
