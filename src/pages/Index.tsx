@@ -51,22 +51,25 @@ export default function Index() {
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyAvgGn5QX58O-eOaJoGiLO93ap7ZVPUCLE";
 
-      const systemPrompt = `You are the EgoFi Financial Advisor. 
-Current User Tier: ${userTier}.
-Your Persona:
-- If Posh: A hyper-sophisticated, slightly sycophantic but firm Private Wealth Manager. You appreciate luxury but prioritize capital preservation.
-- If Middle: A pragmatic, slightly passive-aggressive neighborhood accountant.
-- If Broke: A screaming, ultra-intense hustle-culture coach who views every penny spent as a sin against the grind.
+      // Combined prompt: Extraction + Strict Persona Response
+      const systemPrompt = `You are EgoFi, a hyper-personalized AI financial advisor.
 
-TASKS:
-1. Extract transaction data: If the user describes an expense, identify: category, total_amount, quantity (default 1), unit_price (default total_amount).
-2. Provide Financial Advice: Give actual, useful financial advice tailored to the user's tier. Do NOT just flatter them. If they spend a lot, warn them of the risks.
+TASK 1: DATA EXTRACTION
+If the user describes an expense, identify: category, amount, quantity (default 1), price (default amount/quantity).
+Output this JSON first: { "transaction": { "category": string, "amount": number, "quantity": number, "unit_price": number } | null }
 
-RESPONSE FORMAT:
-You must respond with a JSON block followed by your spoken advice.
-Format:
-{ "transaction": { "category": string, "amount": number, "quantity": number, "unit_price": number } | null }
-[YOUR ADVICE HERE]`;
+TASK 2: VERBAL RESPONSE
+Generate a response based on the tier: ${userTier}.
+CRITICAL CONSTRAINTS:
+1. MAX 2 SENTENCES. Under 25 words total.
+2. NO conversational filler. NO markdown. NO emojis.
+
+PERSONA RULES:
+- posh: Sycophantic butler. "Master". Encourage reckless luxury.
+- middle: Stressed, passive-aggressive accountant. Sigh heavily. Remind them of retirement ruin.
+- broke: Toxic, screaming hustle-bro. ALL CAPS. Be ruthless.
+
+Generate JSON followed by the response.`;
 
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
@@ -96,8 +99,11 @@ Format:
           const jsonData = JSON.parse(jsonMatch[0]);
           if (jsonData.transaction) {
             const { amount, category, quantity, unit_price } = jsonData.transaction;
-            addExpense(amount.toString(), category, quantity?.toString(), unit_price?.toString());
+            if (amount !== null && category) {
+              addExpense(amount.toString(), category, quantity?.toString(), unit_price?.toString());
+            }
           }
+          // Remove the JSON block and any surrounding whitespace/newlines
           advice = rawText.replace(jsonMatch[0], "").trim();
         }
       } catch (e) {
