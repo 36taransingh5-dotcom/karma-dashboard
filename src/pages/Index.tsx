@@ -226,7 +226,7 @@ export default function Index() {
         <aside className={`w-80 flex-shrink-0 ${userTier === "posh" ? "p-8" : "p-4"} ${
           userTier === "posh" ? "border-l border-amber-500/10" : userTier === "broke" ? "border-l-4 border-red-600" : "border-l border-slate-200"
         }`}>
-          <AIAdvisor userTier={userTier} karmaScore={karmaScore} />
+          <AIAdvisor userTier={userTier} karmaScore={karmaScore} aiResponse={aiResponse} aiLoading={aiLoading} />
         </aside>
       </div>
     </div>

@@ -1,13 +1,15 @@
-import { Bot } from "lucide-react";
+import { Bot, Loader2 } from "lucide-react";
 import type { UserTier } from "@/lib/tierConfig";
 import { cardClass, getAIMessage } from "@/lib/tierConfig";
 
 interface AIAdvisorProps {
   userTier: UserTier;
   karmaScore: number;
+  aiResponse?: string | null;
+  aiLoading?: boolean;
 }
 
-export default function AIAdvisor({ userTier, karmaScore }: AIAdvisorProps) {
+export default function AIAdvisor({ userTier, karmaScore, aiResponse, aiLoading }: AIAdvisorProps) {
   return (
     <div className={cardClass[userTier]}>
       <div className="flex items-center gap-2 mb-4">
@@ -20,11 +22,28 @@ export default function AIAdvisor({ userTier, karmaScore }: AIAdvisorProps) {
           {userTier === "posh" ? "Concierge AI" : userTier === "broke" ? "⚠️ INTERVENTION BOT" : "AI Advisor"}
         </h3>
       </div>
-      <div className={`text-sm leading-relaxed ${
-        userTier === "posh" ? "text-amber-200/80 italic" : userTier === "broke" ? "text-lime-400 font-black uppercase" : "text-slate-600"
-      }`}>
-        {getAIMessage(userTier, karmaScore)}
-      </div>
+
+      {aiLoading ? (
+        <div className={`flex items-center gap-2 text-sm ${
+          userTier === "posh" ? "text-amber-200/80 italic" : userTier === "broke" ? "text-lime-400 font-black uppercase" : "text-slate-600"
+        }`}>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          {userTier === "broke" ? "PROCESSING JUDGMENT..." : "Processing Judgment..."}
+        </div>
+      ) : aiResponse ? (
+        <div className={`text-sm leading-relaxed ${
+          userTier === "posh" ? "text-amber-200/80 italic" : userTier === "broke" ? "text-lime-400 font-black uppercase" : "text-slate-600"
+        }`}>
+          {aiResponse}
+        </div>
+      ) : (
+        <div className={`text-sm leading-relaxed ${
+          userTier === "posh" ? "text-amber-200/80 italic" : userTier === "broke" ? "text-lime-400 font-black uppercase" : "text-slate-600"
+        }`}>
+          {getAIMessage(userTier, karmaScore)}
+        </div>
+      )}
+
       <div className={`mt-4 pt-4 border-t text-xs ${
         userTier === "posh" ? "border-amber-500/10 text-amber-500/40" : userTier === "broke" ? "border-red-600 text-red-500" : "border-slate-100 text-slate-400"
       }`}>
