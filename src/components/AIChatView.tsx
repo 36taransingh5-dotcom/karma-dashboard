@@ -88,19 +88,25 @@ export default function AIChatView({
         if (!chatInput.trim() || aiLoading) return;
 
         const input = chatInput.trim();
+        setMessages(prev => [...prev, { role: "user", content: input }]);
+        setChatInput("");
 
-        if (conversation.status === 'connected') {
-            // When connected, we let ElevenLabs handle the conversation
-            // onMessage will take care of adding transcripts to history
-            await conversation.sendUserMessage(input);
-            setChatInput("");
-        } else {
-            // Standard fallback to cloud API
-            setMessages(prev => [...prev, { role: "user", content: input }]);
-            setChatInput("");
-            await onChat(input);
-        }
+        // When connected, we send message to Gemini FIRST to get the text response
+        // Then we feed that text into ElevenLabs manually if possible or just use onChat
+        // BUT the user wants them to match EXACTLY.
+
+        // Strategy: Always use Gemini as the brain. If ElevenLabs is on, use it for voice.
+        await onChat(input);
     };
+
+    // Synchronization: When a new AI message arrives, if ElevenLabs is connected, send it
+    useEffect(() => {
+        if (aiResponse && conversation.status === 'connected') {
+            // Use sendUserMessage to inject the AI's response text so it speaks it
+            // This ensures Gemini text == ElevenLabs voice
+            conversation.sendUserMessage(aiResponse);
+        }
+    }, [aiResponse]);
 
     // Auto-incinerate if the fallback triggers
     useEffect(() => {
@@ -248,7 +254,17 @@ export default function AIChatView({
                                     </div>
                                 )}
                             </div>
-                            <form onSubmit={handleChatSubmit} className="p-4 border-t border-orange-900/30 flex gap-2">
+                            <form onSubmit={handleChatSubmit} className="p-4 border-t border-orange-900/30 flex gap-2 items-center">
+                                <button
+                                    type="button"
+                                    onClick={handleToggleMic}
+                                    className={`p-2 rounded-full border transition-all ${conversation.status === 'connected'
+                                        ? "bg-orange-500 border-orange-400 text-black animate-pulse"
+                                        : "bg-black border-orange-950 text-orange-500 hover:border-orange-500"
+                                        }`}
+                                >
+                                    {conversation.status === 'connected' ? <Mic className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                                </button>
                                 <input
                                     type="text"
                                     placeholder="Speak to the auditor..."

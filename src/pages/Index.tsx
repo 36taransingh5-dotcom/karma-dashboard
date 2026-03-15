@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   ArrowRightLeft,
@@ -39,6 +39,19 @@ export default function Index() {
   const [graveyardMode, setGraveyardMode] = useState(false);
 
   const [totalBalance, setTotalBalance] = useState(4267.83);
+  const [effectiveTier, setEffectiveTier] = useState<UserTier>(userTier);
+
+  // Enforce 'broke' tier if balance is under £1000
+  useEffect(() => {
+    if (totalBalance < 1000) {
+      if (effectiveTier !== "broke") {
+        setEffectiveTier("broke");
+        setGraveyardMode(true); // Automatically trigger graveyard mode for maximum intervention
+      }
+    } else {
+      setEffectiveTier(userTier);
+    }
+  }, [totalBalance, userTier, effectiveTier]);
 
   const addExpense = async (amount: string, category: string, quantity?: string, price?: string) => {
     const numAmount = parseFloat(amount);
@@ -244,7 +257,7 @@ RESPONSE FORMAT:
       case "Settings": return <SettingsView userTier={userTier} onHardReset={handleHardReset} />;
       default: return (
         <AIChatView
-          userTier={userTier}
+          userTier={effectiveTier}
           transactions={transactions}
           onAddExpense={addExpense}
           onChat={handleChat}
@@ -275,9 +288,9 @@ RESPONSE FORMAT:
       );
     }
 
-    const isPosh = userTier === "posh";
+    const isPosh = effectiveTier === "posh";
     const barBg = isPosh ? "bg-white" : "bg-[#003366]";
-    const cardStyle = cardClass[userTier];
+    const cardStyle = cardClass[effectiveTier];
 
     return (
       <div className="space-y-12 relative">
@@ -362,11 +375,11 @@ RESPONSE FORMAT:
           </div>
         </div>
 
-        {activeNav === "Dashboard" && userTier !== "middle" && (
+        {activeNav === "Dashboard" && effectiveTier !== "middle" && (
           <div className="mt-12">
             <h3 className={`text-[10px] font-black uppercase tracking-[0.4em] mb-8 ${isPosh ? "text-white" : "text-slate-900"}`}>Financial Concierge</h3>
             <AIChatView
-              userTier={userTier}
+              userTier={effectiveTier}
               transactions={transactions}
               onAddExpense={addExpense}
               onChat={handleChat}
@@ -382,9 +395,9 @@ RESPONSE FORMAT:
   };
 
   // MIDDLE TIER HEADER (SmartSpend)
-  if (userTier === "middle") {
+  if (effectiveTier === "middle") {
     return (
-      <div className={containerClass[userTier]}>
+      <div className={containerClass[effectiveTier]}>
         {/* Top Header */}
         <header className="bg-[#003366] text-white px-6 py-2 flex items-center justify-between shadow-md">
           <div className="flex items-center gap-2">
@@ -436,9 +449,9 @@ RESPONSE FORMAT:
   }
 
   return (
-    <div className={containerClass[userTier]}>
+    <div className={containerClass[effectiveTier]}>
       {/* FAKE ADS — BROKE ONLY */}
-      {userTier === "broke" && fakeAds.filter((ad) => !closedAds.includes(ad.id)).map((ad) => (
+      {effectiveTier === "broke" && fakeAds.filter((ad) => !closedAds.includes(ad.id)).map((ad) => (
         <div key={ad.id} className="fixed z-[999] bg-yellow-400 text-red-700 font-black text-lg px-6 py-4 shadow-2xl border-4 border-red-600 animate-pulse"
           style={{
             top: (ad as any).top,
@@ -458,17 +471,17 @@ RESPONSE FORMAT:
 
       <div className="flex min-h-screen">
         {/* LEFT SIDEBAR (POSH & BROKE ONLY) */}
-        <aside className={`w-64 flex-shrink-0 flex flex-col ${sidebarClass[userTier]}`}>
-          <div className={`p-6 ${userTier === "posh" ? "py-10" : ""}`}>
-            <h1 className={`text-2xl font-bold tracking-tighter ${userTier === "posh" ? "text-white" : userTier === "broke" ? "text-lime-400" : "text-slate-900"
+        <aside className={`w-64 flex-shrink-0 flex flex-col ${sidebarClass[effectiveTier]}`}>
+          <div className={`p-6 ${effectiveTier === "posh" ? "py-10" : ""}`}>
+            <h1 className={`text-2xl font-bold tracking-tighter ${effectiveTier === "posh" ? "text-white" : effectiveTier === "broke" ? "text-lime-400" : "text-slate-900"
               }`}>EgoFi</h1>
-            <p className={`text-xs mt-1 ${userTier === "posh" ? "text-white/30" : userTier === "broke" ? "text-red-500" : "text-slate-400"
+            <p className={`text-xs mt-1 ${effectiveTier === "posh" ? "text-white/30" : effectiveTier === "broke" ? "text-red-500" : "text-slate-400"
               }`}>
-              {userTier === "posh" ? "THE ULTIMATE MEMBERSHIP" : userTier === "broke" ? "FINANCIAL INTERVENTION MODE" : "Personal Finance Dashboard"}
+              {effectiveTier === "posh" ? "THE ULTIMATE MEMBERSHIP" : effectiveTier === "broke" ? "FINANCIAL INTERVENTION MODE" : "Personal Finance Dashboard"}
             </p>
           </div>
 
-          <nav className={`flex-1 ${userTier === "posh" ? "mt-8" : "mt-2"}`}>
+          <nav className={`flex-1 ${effectiveTier === "posh" ? "mt-8" : "mt-2"}`}>
             {([
               { name: "Dashboard" as const, icon: LayoutDashboard },
               { name: "Transactions" as const, icon: ArrowRightLeft },
@@ -476,7 +489,7 @@ RESPONSE FORMAT:
             ]).map(({ name, icon: Icon }) => (
               <div key={name} className={navItemClass(activeNav === name)} onClick={() => setActiveNav(name)}>
                 <Icon className="w-4 h-4" />
-                <span className={userTier === "broke" ? "uppercase text-sm" : "text-sm"}>{name}</span>
+                <span className={effectiveTier === "broke" ? "uppercase text-sm" : "text-sm"}>{name}</span>
               </div>
             ))}
 
