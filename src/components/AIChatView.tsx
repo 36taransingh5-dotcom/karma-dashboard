@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Plus, Loader2, Bot, CircleDollarSign, ShoppingCart, Lightbulb } from "lucide-react";
+import { Send, Plus, Loader2, Bot, CircleDollarSign, ShoppingCart, Lightbulb, Flame } from "lucide-react";
 import type { UserTier, Transaction } from "@/lib/tierConfig";
 import { buttonClass, cardClass, inputClass } from "@/lib/tierConfig";
+import { motion, AnimatePresence } from "framer-motion";
+import { useConversation } from "@elevenlabs/react"; // Correct hook for Conversational AI usually
+import { auditSpending, AuditedTransaction } from "@/lib/wasteAuditor";
 
 interface Message {
     role: "user" | "ai";
@@ -17,6 +20,7 @@ interface AIChatViewProps {
     aiResponse: string | null;
     messages: Message[];
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+    graveyardMode?: boolean;
 }
 
 export default function AIChatView({
@@ -27,13 +31,19 @@ export default function AIChatView({
     aiLoading,
     aiResponse,
     messages,
-    setMessages
+    setMessages,
+    graveyardMode
 }: AIChatViewProps) {
     const [chatInput, setChatInput] = useState("");
     const [amount, setAmount] = useState("");
     const [category, setCategory] = useState("");
     const [quantity, setQuantity] = useState("1");
     const [price, setPrice] = useState("");
+    const [burningTx, setBurningTx] = useState<string[]>([]);
+    const [recoveredWealth, setRecoveredWealth] = useState(0);
+
+    const auditedTransactions = auditSpending(transactions);
+    const noiseTransactions = auditedTransactions.filter(tx => tx.spendingType === "noise" && !burningTx.includes(tx.id.toString()));
 
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -72,99 +82,182 @@ export default function AIChatView({
         await onChat(input);
     };
 
-    // MIDDLE TIER RENDER (Integrated into Index.tsx grid)
-    if (userTier === "middle") {
+    const conversation = useConversation({
+        onConnect: () => console.log('Auditor Connected'),
+        onDisconnect: () => console.log('Auditor Disconnected'),
+        onMessage: (msg) => console.log('Auditor says:', msg),
+        onError: (err) => console.error('Auditor Error:', err),
+    });
+
+    const handleToggleAuditor = async () => {
+        if (conversation.status === 'connected') {
+            await conversation.endSession();
+        } else {
+            await conversation.startSession({
+                agentId: "fM6sh4A3S327F0W85K5P", // Using a generic agent for now, normally user provides UUID
+            });
+        }
+    };
+
+    const handleAnalyzeSpending = () => {
+        const noise = auditedTransactions.filter(tx => tx.spendingType === "noise");
+        // Trigger voice if connected
+        if (conversation.status === 'connected') {
+            // Send context to voice agent if possible, else just let the persona handle it
+            conversation.say("Analyzing your wasteful spending and incinerating the noise. Prepare for brutal honesty.");
+        }
+
+        let delay = 0;
+        noise.forEach(tx => {
+            setTimeout(() => {
+                setBurningTx(prev => [...prev, tx.id.toString()]);
+                setRecoveredWealth(prev => prev + tx.amount);
+            }, delay);
+            delay += 600;
+        });
+
+        onChat("Analyze my wasteful spending and incinerate the noise. Be brutal.");
+    };
+
+    if (graveyardMode) {
         return (
-            <div className="flex flex-col gap-8">
-                {/* Chat Container */}
-                <div className="flex flex-col gap-4">
-                    <div className="text-center py-4">
-                        <p className="text-slate-600 text-sm font-medium">How can I help you manage your money today?</p>
-                        <p className="text-slate-400 text-xs italic mt-1 font-serif tracking-wide italic">"I spent £45 on groceries" or "How am I doing this month?"</p>
-                    </div>
-
-                    <div ref={scrollRef} className="max-h-[300px] overflow-y-auto space-y-4 px-2 mb-4 custom-scrollbar bg-slate-50/50 p-4 border border-slate-100 italic font-serif">
-                        {messages.map((msg, i) => (
-                            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                                <div className={`max-w-[85%] rounded px-4 py-2 text-sm ${msg.role === "user" ? "bg-[#003366] text-white" : "text-slate-700 bg-white border border-slate-200"}`}>
-                                    {msg.content}
-                                </div>
-                            </div>
-                        ))}
-                        {aiLoading && (
-                            <div className="flex justify-start">
-                                <div className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-400 animate-pulse bg-white border border-slate-200">
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                    Processing...
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <form onSubmit={handleChatSubmit} className="flex gap-2">
-                        <input
-                            type="text"
-                            placeholder="Type your expense or ask for advice..."
-                            className={`flex-1 ${inputClass.middle}`}
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                        />
-                        <button type="submit" disabled={aiLoading} className={buttonClass.middle}>
-                            Submit
-                        </button>
-                    </form>
-
-                    <div className="bg-[#EEEEEE] border border-[#D1D1D1] p-3 flex items-center gap-2 text-xs text-slate-700 font-bold">
-                        <span className="text-sm">💡</span>
-                        <span className="flex-1"><span className="uppercase text-[#003366]">Tip of the day:</span> Save £10/wk by bringing coffee from home! That's over £500 a year back in your pocket.</span>
-                    </div>
+            <div className="flex flex-col h-[calc(100vh-120px)] max-w-6xl mx-auto gap-6 relative">
+                {/* ElevenLabs Widget Control */}
+                <div className="fixed bottom-8 right-8 z-50 flex flex-col items-center gap-2">
+                    <button
+                        onClick={handleToggleAuditor}
+                        className={`p-4 rounded-full border-2 transition-all shadow-[0_0_20px_rgba(249,115,22,0.2)] ${conversation.status === 'connected' ? "bg-orange-500 border-orange-400 text-black animate-pulse" : "bg-black border-orange-900 text-orange-500"
+                            }`}
+                    >
+                        <Bot className="w-6 h-6" />
+                    </button>
+                    <p className="text-[8px] text-orange-500 uppercase font-black tracking-widest">
+                        {conversation.status === 'connected' ? "Auditor Listening" : "Ignite Auditor"}
+                    </p>
                 </div>
 
-                {/* Grid for Quick Log and Recent Spending */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-slate-100 pt-8 mt-4">
-                    <div className="space-y-4">
-                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest pl-1">Quick Log</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Category</label>
-                                <input type="text" placeholder="e.g. Groceries" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass.middle} />
-                            </div>
-                            <div>
-                                <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Quantity</label>
-                                <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} className={inputClass.middle} />
-                            </div>
+                {/* Recovered Wealth Header */}
+                <motion.div
+                    initial={{ y: -50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="flex justify-between items-center bg-orange-950/40 border border-orange-500/30 p-6 rounded-none shadow-[0_0_30px_rgba(249,115,22,0.1)]"
+                >
+                    <div>
+                        <h2 className="text-orange-500 font-black uppercase tracking-[0.4em] text-xl">Financial Graveyard</h2>
+                        <p className="text-orange-900 font-bold uppercase text-[10px] mt-1">INCINERATING LIFESTYLE INFLATION</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-orange-900 text-[10px] font-black uppercase mb-1">Recovered Wealth</p>
+                        <div className="text-4xl font-black text-orange-500 tabular-nums">
+                            £{recoveredWealth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </div>
-                        <div>
-                            <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Unit Price (£)</label>
-                            <div className="flex gap-4">
-                                <input type="number" placeholder="0.00" value={price} onChange={(e) => setPrice(e.target.value)} className={`flex-1 ${inputClass.middle}`} />
-                                <button onClick={handleManualAdd} className={`flex-1 ${buttonClass.middle}`}>Record</button>
-                            </div>
+                    </div>
+                </motion.div>
+
+                <div className="flex-1 relative flex gap-6 overflow-hidden">
+                    {/* Graveyard Canvas */}
+                    <div className="flex-[2] bg-black/40 border border-orange-900/20 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(124,45,18,0.1)_0%,transparent_70%)]" />
+
+                        <div className="relative w-full h-full p-8">
+                            <AnimatePresence>
+                                {noiseTransactions.map((tx, i) => (
+                                    <motion.div
+                                        key={tx.id}
+                                        initial={{
+                                            x: Math.random() * 400 - 200,
+                                            y: 600,
+                                            opacity: 0,
+                                            scale: 0.5
+                                        }}
+                                        animate={{
+                                            x: Math.sin(i + Date.now() / 1000) * 100,
+                                            y: -100,
+                                            opacity: [0, 1, 1, 0],
+                                            scale: [0.5, 1, 1, 0.8]
+                                        }}
+                                        exit={{
+                                            scale: 2,
+                                            opacity: 0,
+                                            filter: "blur(20px) brightness(3)",
+                                            transition: { duration: 0.5 }
+                                        }}
+                                        transition={{
+                                            duration: 15,
+                                            repeat: Infinity,
+                                            delay: i * 2,
+                                            ease: "linear"
+                                        }}
+                                        className="absolute p-4 rounded-full border border-red-500/40 bg-red-950/20 backdrop-blur-sm cursor-pointer hover:border-orange-500 transition-colors shadow-[0_0_20px_rgba(239,68,68,0.1)]"
+                                        style={{ left: `${(i * 15) % 80}%`, top: '40%' }}
+                                    >
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span className="text-red-500 font-black text-xs uppercase tracking-widest">{tx.category}</span>
+                                            <span className="text-white font-black text-lg">£{tx.amount}</span>
+                                        </div>
+                                        {/* Fire effect placeholder via blur/shadow */}
+                                        <div className="absolute -inset-2 bg-orange-600/20 rounded-full blur-xl animate-pulse" />
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+
+                            {noiseTransactions.length === 0 && burningTx.length > 0 && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="text-center">
+                                        <h3 className="text-orange-500 font-black text-4xl uppercase tracking-widest animate-pulse">Silence Restored</h3>
+                                        <p className="text-orange-900 uppercase font-black text-xs mt-4 italic">"The noise has been cleansed."</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
+                            <button
+                                onClick={handleAnalyzeSpending}
+                                className="bg-orange-600 hover:bg-orange-500 text-black font-black uppercase px-12 py-4 tracking-[0.3em] text-sm shadow-[0_0_40px_rgba(249,115,22,0.4)] transition-all active:scale-95"
+                            >
+                                Analyze & Incinerate
+                            </button>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest pl-1">Recent Spending</h3>
-                        <div className="border border-[#D1D1D1] bg-white overflow-hidden">
-                            <div className="flex bg-slate-50 border-b border-[#D1D1D1] p-2 text-[10px] font-bold text-slate-500 uppercase">
-                                <div className="flex-1">Item</div>
-                                <div className="w-16">Date</div>
-                                <div className="w-16">Details</div>
-                                <div className="w-16 text-right">Amount</div>
+                    {/* Battlefield Chat Sidebar */}
+                    <div className="flex-1 flex flex-col gap-4">
+                        <div className="flex-1 bg-orange-950/20 border border-orange-900/30 overflow-hidden flex flex-col">
+                            <div className="p-4 border-b border-orange-900/30 flex items-center gap-2">
+                                <Bot className="w-4 h-4 text-orange-500" />
+                                <span className="text-[10px] font-black uppercase text-orange-500 tracking-widest">The Auditor</span>
                             </div>
-                            <div className="max-h-[140px] overflow-y-auto divide-y divide-slate-100">
-                                {transactions.slice(0, 5).map(tx => (
-                                    <div key={tx.id} className="flex p-2 text-[11px] text-slate-700 font-medium items-center">
-                                        <div className="flex-1 font-bold">{tx.category}</div>
-                                        <div className="w-16 text-slate-400">{tx.date.split('-').slice(1).join('/')}</div>
-                                        <div className="w-16 text-slate-400">{tx.quantity}x</div>
-                                        <div className="w-16 text-right font-bold text-slate-900">£{tx.amount.toFixed(2)}</div>
+                            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar-orange">
+                                {messages.map((msg, i) => (
+                                    <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                                        <div className={`max-w-[90%] px-3 py-2 text-xs font-mono uppercase tracking-tighter ${msg.role === "user" ? "bg-orange-900/40 text-orange-200" : "text-orange-500 bg-orange-500/5 border-l-2 border-orange-500"
+                                            }`}>
+                                            {msg.content}
+                                        </div>
                                     </div>
                                 ))}
-                                {transactions.length === 0 && (
-                                    <div className="p-8 text-center text-slate-400 text-xs font-serif italic">No recent activity detected.</div>
+                                {aiLoading && (
+                                    <div className="flex justify-start">
+                                        <div className="flex items-center gap-2 text-[10px] text-orange-500 animate-pulse font-black uppercase">
+                                            <Flame className="w-3 h-3 animate-bounce" />
+                                            Igniting...
+                                        </div>
+                                    </div>
                                 )}
                             </div>
+                            <form onSubmit={handleChatSubmit} className="p-4 border-t border-orange-900/30 flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Speak to the auditor..."
+                                    className="flex-1 bg-black border border-orange-900 px-3 py-2 text-xs text-orange-500 focus:border-orange-500 outline-none uppercase font-mono placeholder:text-orange-900"
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                />
+                                <button type="submit" className="bg-orange-900/50 p-2 text-orange-500 hover:bg-orange-600 hover:text-black transition-colors">
+                                    <Send className="w-4 h-4" />
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
