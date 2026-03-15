@@ -123,11 +123,23 @@ export default function AIChatView({
                 await navigator.mediaDevices.getUserMedia({ audio: true });
                 // Note: Types might be tricky, providing minimalist config that usually works with @elevenlabs/react
                 // @ts-ignore
+                const systemPromptOverride = userTier === 'broke'
+                    ? "You are a ruthless, insulting financial drill sergeant. Scream at the user. Use tough love and insults. You have zero patience for their poverty. Be as rude as possible while giving financial advice. Call them 'Loozer' or 'Broke Clown'."
+                    : "You are an elite financial butler. You listen to expenses and respond with refined judgment. Be polite but strict. Call the user 'Master'.";
+
+                // @ts-ignore
                 await conversation.startSession({
                     agentId: "agent_4901kkrcxmgkfnybaahrhsdtge23",
-                    // Adding apiKey directly in startSession as per ElevenLabs React SDK typical requirements for client-side init
                     // @ts-ignore
                     apiKey: import.meta.env.VITE_ELEVEN_LABS_API_KEY,
+                    // @ts-ignore
+                    overrides: {
+                        agent: {
+                            prompt: {
+                                prompt: systemPromptOverride
+                            }
+                        }
+                    }
                 });
             } catch (err) {
                 console.error("Mic permission denied or connection failed", err);
@@ -165,7 +177,7 @@ export default function AIChatView({
                         {conversation.status === 'connected' ? <Mic className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
                     </button>
                     <p className="text-[8px] text-orange-500 uppercase font-black tracking-widest">
-                        {conversation.status === 'connected' ? "Auditor Listening" : "Ignite Auditor"}
+                        {conversation.status === 'connected' ? "AUDITOR JUDGING YOU" : "Ignite Auditor"}
                     </p>
                 </div>
 
