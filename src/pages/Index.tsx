@@ -36,6 +36,7 @@ export default function Index() {
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [graveyardMode, setGraveyardMode] = useState(false);
 
   const [totalBalance, setTotalBalance] = useState(4267.83);
   const [effectiveTier, setEffectiveTier] = useState<UserTier>(userTier);
@@ -43,7 +44,10 @@ export default function Index() {
   // Enforce 'broke' tier if balance is under £1000
   useEffect(() => {
     if (totalBalance < 1000) {
-      setEffectiveTier("broke");
+      if (effectiveTier !== "broke") {
+        setEffectiveTier("broke");
+        setGraveyardMode(true); // Automatically trigger graveyard mode for maximum intervention
+      }
     } else {
       setEffectiveTier(userTier);
     }
@@ -249,7 +253,7 @@ RESPONSE FORMAT:
 
   const currentView = (() => {
     switch (activeNav) {
-      case "Transactions": return <TransactionsView userTier={userTier} extraTransactions={transactions.filter(t => !INITIAL_TRANSACTIONS.find(it => it.id === t.id))} />;
+      case "Transactions": return <TransactionsView userTier={userTier} extraTransactions={transactions.filter(t => !INITIAL_TRANSACTIONS.find(it => it.id === t.id))} graveyardMode={graveyardMode} />;
       case "Settings": return <SettingsView userTier={userTier} onHardReset={handleHardReset} />;
       default: return (
         <AIChatView
@@ -261,6 +265,7 @@ RESPONSE FORMAT:
           aiResponse={aiResponse}
           messages={messages}
           setMessages={setMessages}
+          graveyardMode={graveyardMode}
         />
       );
     }
@@ -488,6 +493,22 @@ RESPONSE FORMAT:
               </div>
             ))}
 
+            {/* Graveyard Toggle */}
+            <div
+              className={`mt-10 mx-4 p-4 border-2 transition-all cursor-pointer group ${graveyardMode
+                ? "border-orange-500 bg-orange-950 text-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+                : "border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300"
+                }`}
+              onClick={() => setGraveyardMode(!graveyardMode)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black uppercase tracking-widest">Graveyard Mode</span>
+                <div className={`w-2 h-2 rounded-full ${graveyardMode ? "bg-orange-500 animate-pulse" : "bg-slate-800"}`} />
+              </div>
+              <p className="text-[8px] uppercase tracking-tighter leading-tight opacity-60">
+                {graveyardMode ? "INCINERATING WASTE..." : "SWITCH TO BATTLEFIELD VIEW"}
+              </p>
+            </div>
           </nav>
 
           <div className={`p-6 ${userTier === "posh" ? "pb-10" : ""}`}>
@@ -522,7 +543,9 @@ RESPONSE FORMAT:
           </div>
         </aside>
 
-        <main className={`flex-1 transition-all duration-1000 ${userTier === "posh" ? "p-0 overflow-hidden bg-gradient-to-br from-black via-[#0A0A0A] to-[#111]" : userTier === "broke" ? "p-4" : "p-6"
+        <main className={`flex-1 transition-all duration-1000 ${graveyardMode
+          ? "p-0 overflow-hidden bg-gradient-to-br from-[#1a0f00] via-black to-[#2a1a00] border-l border-orange-900/30"
+          : (userTier === "posh" ? "p-0 overflow-hidden bg-gradient-to-br from-black via-[#0A0A0A] to-[#111]" : userTier === "broke" ? "p-4" : "p-6")
           }`}>
 
           {currentView}
