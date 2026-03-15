@@ -15,6 +15,8 @@ import Onboarding from "@/components/Onboarding";
 import AIChatView from "@/components/AIChatView";
 import TransactionsView from "@/components/TransactionsView";
 import SettingsView from "@/components/SettingsView";
+import { auditSpending } from "@/lib/wasteAuditor";
+
 
 
 export interface Message {
@@ -128,7 +130,8 @@ RESPONSE FORMAT:
             "Authorization": `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: "openai/gpt-oss-120b",
+            model: "gpt-4o-mini",
+
             messages: [
               { role: "system", content: systemPrompt },
               ...messages.map(m => ({
@@ -173,11 +176,21 @@ RESPONSE FORMAT:
         );
       }
     } catch (error) {
-      console.error("Chat failed:", error);
-      const fallback = "My financial processing units are currently occupied.";
-      setAiResponse(fallback);
-      setMessages(prev => [...prev, { role: "ai", content: fallback }]);
+      console.error("DETAILED API FAILURE:", error);
+
+      // Calculate local noise for the Graveyard effect
+      const audited = auditSpending(transactions);
+      const noiseTotal = audited
+        .filter(tx => tx.spendingType === "noise")
+        .reduce((sum, tx) => sum + tx.amount, 0);
+
+      const fallbackMessage = `OFFLINE MODE: Cloud units are occupied, but my local Auditor is active. I've detected £${noiseTotal.toFixed(2)} in absolute financial waste. Initiating incineration sequence.`;
+
+      // Ensure state updates to trigger the 'burning' animations in AIChatView
+      setAiResponse(fallbackMessage);
+      setMessages(prev => [...prev, { role: "ai", content: fallbackMessage }]);
     } finally {
+
       setAiLoading(false);
     }
   };
@@ -466,8 +479,8 @@ RESPONSE FORMAT:
             {/* Graveyard Toggle */}
             <div
               className={`mt-10 mx-4 p-4 border-2 transition-all cursor-pointer group ${graveyardMode
-                  ? "border-orange-500 bg-orange-950 text-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]"
-                  : "border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300"
+                ? "border-orange-500 bg-orange-950 text-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+                : "border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300"
                 }`}
               onClick={() => setGraveyardMode(!graveyardMode)}
             >
@@ -514,8 +527,8 @@ RESPONSE FORMAT:
         </aside>
 
         <main className={`flex-1 transition-all duration-1000 ${graveyardMode
-            ? "p-12 bg-gradient-to-br from-[#1a0f00] via-black to-[#2a1a00] border-l border-orange-900/30"
-            : (userTier === "posh" ? "p-12 bg-gradient-to-br from-black via-[#0A0A0A] to-[#111]" : userTier === "broke" ? "p-4" : "p-6")
+          ? "p-12 bg-gradient-to-br from-[#1a0f00] via-black to-[#2a1a00] border-l border-orange-900/30"
+          : (userTier === "posh" ? "p-12 bg-gradient-to-br from-black via-[#0A0A0A] to-[#111]" : userTier === "broke" ? "p-4" : "p-6")
           }`}>
           {currentView}
         </main>
