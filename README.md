@@ -1,73 +1,84 @@
-# Welco.me to your Lovable project
+# EgoFi (karma-dashboard)
 
-## Project info
+A personal finance dashboard built as a Vite + React single-page app. Users pick a spending "tier" (Posh, Middle, or Broke) during onboarding, and the whole UI — layout, styling, and an AI chat advisor's persona — adapts to that tier. The app tracks a running balance, a "Financial Karma Score" that reacts to spending behavior, and a transaction log, and lets the user chat with an AI advisor that logs expenses and gives tier-flavored financial commentary.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Key features
 
-## How can I edit this code?
+- **Tiered UI/UX**: Three distinct visual themes and copy styles (Posh, Middle, Broke) driven by `src/lib/tierConfig.ts`, applied across the dashboard, sidebar/nav, and cards.
+- **Onboarding flow**: `src/components/Onboarding.tsx` selects the user's tier before entering the dashboard.
+- **AI chat advisor**: `src/pages/Index.tsx` sends chat messages to a `/api/ai/chat` endpoint (proxied to an OpenAI-compatible chat completions API) with a system prompt that role-plays a persona matching the user's tier and can extract structured transaction data from natural-language input.
+- **Automatic tier downgrade**: balances under £1,000 force the "Broke" tier and enable "Graveyard Mode".
+- **Local waste auditor fallback**: `src/lib/wasteAuditor.ts` classifies transactions as "signal" (essential) or "noise" (discretionary) spending, used as a fallback when the AI API call fails.
+- **Views**: Dashboard (balance, karma score, spending charts), Transactions list, Settings (with a hard reset), and an AI chat view.
+- **shadcn/ui component library**: a full set of Radix-based UI primitives under `src/components/ui/`.
 
-There are several ways of editing your application.
+## Tech stack
 
-**Use Lovable**
+- **Framework**: React 18 + TypeScript, built with Vite (SWC plugin)
+- **Routing**: React Router
+- **Data/state**: TanStack React Query, React Hook Form + Zod
+- **UI**: Tailwind CSS, shadcn/ui, Radix UI primitives, lucide-react icons, Recharts, Framer Motion
+- **Testing**: Vitest + Testing Library (unit), Playwright (e2e, via `lovable-agent-playwright-config`)
+- **Deployment**: Vercel (`vercel.json` rewrites `/api/ai/chat` to an AI chat-completions proxy and serves the SPA for all other routes)
+- Scaffolded with [Lovable](https://lovable.dev)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Project structure
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+  components/        # App-level components (Onboarding, Dashboard/AI/Transactions/Settings views)
+  components/ui/      # shadcn/ui primitives (button, card, dialog, etc.)
+  hooks/               # Custom hooks (use-mobile, use-toast)
+  lib/                 # tierConfig (tiers, styles, seed data), wasteAuditor, utils
+  pages/               # Route-level pages (Index, NotFound)
+  test/                # Vitest setup and example test
+  App.tsx              # Router and providers
+  main.tsx             # App entry point
+public/                # Static assets
+playwright.config.ts   # Playwright e2e config
+vitest.config.ts       # Vitest unit test config
+vercel.json             # Deployment rewrites (API proxy + SPA fallback)
 ```
 
-**Edit a file directly in GitHub**
+## Setup / installation
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Requires Node.js and a package manager (npm or Bun — both a `package-lock.json` and `bun.lock`/`bun.lockb` are present).
 
-**Use GitHub Codespaces**
+```sh
+# Clone the repository
+git clone <YOUR_GIT_URL>
+cd karma-dashboard
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Install dependencies
+npm install
+# or: bun install
 
-## What technologies are used for this project?
+# Copy the environment template and fill in values
+cp .env.example .env
+```
 
-This project is built with:
+Environment variables (`.env`):
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Variable | Description |
+| --- | --- |
+| `VITE_GEMINI_API_KEY` | API key sent as a bearer token to the `/api/ai/chat` endpoint used by the AI advisor chat feature. |
 
-## How can I deploy this project?
+## Usage / running locally
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```sh
+npm run dev        # start the Vite dev server with hot reload
+npm run build       # production build
+npm run build:dev   # development-mode build
+npm run preview     # preview the production build locally
+npm run lint         # run ESLint
+npm run test         # run Vitest unit tests once
+npm run test:watch  # run Vitest in watch mode
+```
 
-## Can I connect a custom domain to my Lovable project?
+The AI chat feature calls `/api/ai/chat`, which only resolves when deployed on Vercel (or another environment that honors `vercel.json`'s rewrite to the chat-completions proxy). If that request fails locally, the app falls back to the local waste auditor (`src/lib/wasteAuditor.ts`) to still surface spending insights.
 
-Yes, you can!
+For end-to-end tests:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```sh
+npx playwright test
+```
